@@ -8,7 +8,6 @@ use runtime::Runtime;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 type RuntimeHash = <Runtime as frame_system::Trait>::Hash;
-type BlockNumber = <Runtime as frame_system::Trait>::BlockNumber;
 type Balance = u128;
 
 /// A serializable representaion of some other type.
@@ -22,7 +21,6 @@ trait Mirror: Serialize + DeserializeOwned {
 pub enum Call {
     System(SystemCall),
     Timestamp(TimestampCall),
-    Grandpa(GrandpaCall),
     Balances(BalancesCall),
     Sudo(SudoCall),
     DIDModule(DidCall),
@@ -35,35 +33,34 @@ impl Mirror for Call {
     type Reflection = runtime::Call;
 
     fn into_reflection(self) -> Self::Reflection {
-        // match other {
-        //     Call::System(a) => runtime::Call::System(a),
-        //     Call::RandomnessCollectiveFlip(a) => runtime::Call::RandomnessCollectiveFlip(a),
-        //     Call::Timestamp(a) => runtime::Call::Timestamp(a),
-        //     Call::Grandpa(a) => runtime::Call::Grandpa(a),
-        //     Call::Balances(a) => runtime::Call::Balances(a),
-        //     Call::Sudo(a) => runtime::Call::Sudo(a),
-        //     Call::DIDModule(a) => runtime::Call::DIDModule(a),
-        //     Call::Revoke(a) => runtime::Call::Revoke(a),
-        //     Call::BlobStore(a) => runtime::Call::BlobStore(a),
-        //     Call::Collective(a) => runtime::Call::Collective(a),
-        // }
-        unimplemented!()
+        match self {
+            Call::System(a) => runtime::Call::System(a.into_reflection()),
+            Call::Timestamp(a) => runtime::Call::Timestamp(a.into_reflection()),
+            Call::Balances(a) => runtime::Call::Balances(a.into_reflection()),
+            Call::Sudo(a) => runtime::Call::Sudo(a.into_reflection()),
+            Call::DIDModule(a) => runtime::Call::DIDModule(a.into_reflection()),
+            Call::Revoke(a) => runtime::Call::Revoke(a.into_reflection()),
+            Call::BlobStore(a) => runtime::Call::BlobStore(a.into_reflection()),
+            Call::Collective(a) => runtime::Call::Collective(a.into_reflection()),
+        }
     }
 
-    fn from_reflection(_other: Self::Reflection) -> Self {
-        // match other {
-        //     runtime::Call::System(a) => Call::System(a),
-        //     runtime::Call::RandomnessCollectiveFlip(a) => Call::RandomnessCollectiveFlip(a),
-        //     runtime::Call::Timestamp(a) => Call::Timestamp(a),
-        //     runtime::Call::Grandpa(a) => Call::Grandpa(a),
-        //     runtime::Call::Balances(a) => Call::Balances(a),
-        //     runtime::Call::Sudo(a) => Call::Sudo(a),
-        //     runtime::Call::DIDModule(a) => Call::DIDModule(a),
-        //     runtime::Call::Revoke(a) => Call::Revoke(a),
-        //     runtime::Call::BlobStore(a) => Call::BlobStore(a),
-        //     runtime::Call::Collective(a) => Call::Collective(a),
-        // }
-        unimplemented!()
+    fn from_reflection(other: Self::Reflection) -> Self {
+        match other {
+            runtime::Call::System(a) => Call::System(Mirror::from_reflection(a)),
+            runtime::Call::RandomnessCollectiveFlip(
+                pallet_randomness_collective_flip::Call::__PhantomItem(_, a),
+            ) => swallow(a),
+            runtime::Call::Timestamp(a) => Call::Timestamp(Mirror::from_reflection(a)),
+            runtime::Call::Grandpa(pallet_grandpa::Call::report_equivocation(_, a)) => swallowv(a),
+            runtime::Call::Grandpa(pallet_grandpa::Call::__PhantomItem(_, a)) => swallow(a),
+            runtime::Call::Balances(a) => Call::Balances(Mirror::from_reflection(a)),
+            runtime::Call::Sudo(a) => Call::Sudo(Mirror::from_reflection(a)),
+            runtime::Call::DIDModule(a) => Call::DIDModule(Mirror::from_reflection(a)),
+            runtime::Call::Revoke(a) => Call::Revoke(Mirror::from_reflection(a)),
+            runtime::Call::BlobStore(a) => Call::BlobStore(Mirror::from_reflection(a)),
+            runtime::Call::Collective(a) => Call::Collective(Mirror::from_reflection(a)),
+        }
     }
 }
 
@@ -99,172 +96,77 @@ impl Mirror for SystemCall {
         }
     }
 
-    fn from_reflection(_other: Self::Reflection) -> Self {
-        unimplemented!()
+    fn from_reflection(other: Self::Reflection) -> Self {
+        match other {
+            Self::Reflection::fill_block(a) => Self::FillBlock(a),
+            Self::Reflection::remark(a) => Self::Remark(a),
+            Self::Reflection::set_heap_pages(a) => Self::SetHeapPages(a),
+            Self::Reflection::set_code(a) => Self::SetCode(a),
+            Self::Reflection::set_code_without_checks(a) => Self::SetCodeWithoutChecks(a),
+            Self::Reflection::set_changes_trie_config(a) => Self::SetChangesTrieConfig(a),
+            Self::Reflection::set_storage(a) => Self::SetStorage(a),
+            Self::Reflection::kill_storage(a) => Self::KillStorage(a),
+            Self::Reflection::kill_prefix(a, b) => Self::KillPrefix(a, b),
+            Self::Reflection::suicide() => Self::Suicide(),
+            Self::Reflection::__PhantomItem(_, a) => swallow(a),
+        }
     }
 }
 
 #[derive(Serialize, Deserialize)]
 pub enum TimestampCall {
-    Set(bool),
+    Set(u64),
 }
 
 impl Mirror for TimestampCall {
     type Reflection = pallet_timestamp::Call<Runtime>;
 
     fn into_reflection(self) -> Self::Reflection {
-        unimplemented!()
+        match self {
+            Self::Set(a) => Self::Reflection::set(a),
+        }
     }
 
-    fn from_reflection(_other: Self::Reflection) -> Self {
-        unimplemented!()
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-pub enum GrandpaCall {
-    ReportEquivocation(EquivocationProof, SupportVoid),
-}
-
-impl Mirror for GrandpaCall {
-    type Reflection = pallet_grandpa::Call<Runtime>;
-
-    fn into_reflection(self) -> Self::Reflection {
-        unimplemented!()
-    }
-
-    fn from_reflection(_other: Self::Reflection) -> Self {
-        unimplemented!()
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-pub enum SupportVoid {}
-
-impl Mirror for SupportVoid {
-    type Reflection = frame_support::Void;
-
-    fn into_reflection(self) -> Self::Reflection {
-        unimplemented!()
-    }
-
-    fn from_reflection(_other: Self::Reflection) -> Self {
-        unimplemented!()
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct EquivocationProof {
-    set_id: u64,
-    equivocation: FinalityGrandpaEquivocation,
-}
-
-#[derive(Serialize, Deserialize)]
-pub enum FinalityGrandpaEquivocation {
-    Prevote(GrandpaEquivocation<GrandpaPrevote>),
-    Precommit(GrandpaEquivocation<GrandpaPrecommit>),
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct GrandpaEquivocation<V> {
-    pub round_number: u64,
-    pub identity: GrandpaAuthorityId,
-    pub first: (V, GrandpaAuthoritySignature),
-    pub second: (V, GrandpaAuthoritySignature),
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct GrandpaPrecommit {}
-
-impl Mirror for GrandpaPrecommit {
-    type Reflection = finality_grandpa::Precommit<RuntimeHash, BlockNumber>;
-
-    fn into_reflection(self) -> Self::Reflection {
-        unimplemented!()
-    }
-
-    fn from_reflection(_other: Self::Reflection) -> Self {
-        unimplemented!()
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct GrandpaPrevote {}
-
-impl Mirror for GrandpaPrevote {
-    type Reflection = finality_grandpa::Prevote<RuntimeHash, BlockNumber>;
-
-    fn into_reflection(self) -> Self::Reflection {
-        unimplemented!()
-    }
-
-    fn from_reflection(_other: Self::Reflection) -> Self {
-        unimplemented!()
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct GrandpaAuthorityId {}
-
-impl Mirror for GrandpaAuthorityId {
-    type Reflection = sp_finality_grandpa::AuthorityId;
-
-    fn into_reflection(self) -> Self::Reflection {
-        unimplemented!()
-    }
-
-    fn from_reflection(_other: Self::Reflection) -> Self {
-        unimplemented!()
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct GrandpaAuthoritySignature {}
-
-impl Mirror for GrandpaAuthoritySignature {
-    type Reflection = sp_finality_grandpa::AuthoritySignature;
-
-    fn into_reflection(self) -> Self::Reflection {
-        unimplemented!()
-    }
-
-    fn from_reflection(_other: Self::Reflection) -> Self {
-        unimplemented!()
+    fn from_reflection(other: Self::Reflection) -> Self {
+        match other {
+            Self::Reflection::set(a) => Self::Set(a),
+            Self::Reflection::__PhantomItem(_, a) => swallow(a),
+        }
     }
 }
 
 #[derive(Serialize, Deserialize)]
 pub enum BalancesCall {
-    Transfer(AccountId, Balance),
-    SetBalance(AccountId, Balance, Balance),
-    ForceTransfer(AccountId, AccountId, Balance),
-    TransferKeepAlive(AccountId, Balance),
+    Transfer(sp_core::crypto::AccountId32, Balance),
+    SetBalance(sp_core::crypto::AccountId32, Balance, Balance),
+    ForceTransfer(
+        sp_core::crypto::AccountId32,
+        sp_core::crypto::AccountId32,
+        Balance,
+    ),
+    TransferKeepAlive(sp_core::crypto::AccountId32, Balance),
 }
 
 impl Mirror for BalancesCall {
     type Reflection = pallet_balances::Call<Runtime>;
 
     fn into_reflection(self) -> Self::Reflection {
-        unimplemented!()
+        match self {
+            Self::Transfer(a, b) => Self::Reflection::transfer(a, b),
+            Self::SetBalance(a, b, c) => Self::Reflection::set_balance(a, b, c),
+            Self::ForceTransfer(a, b, c) => Self::Reflection::force_transfer(a, b, c),
+            Self::TransferKeepAlive(a, b) => Self::Reflection::transfer_keep_alive(a, b),
+        }
     }
 
-    fn from_reflection(_other: Self::Reflection) -> Self {
-        unimplemented!()
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct AccountId(pub [u8; 32]);
-
-impl Mirror for AccountId {
-    type Reflection = sp_core::crypto::AccountId32;
-
-    fn into_reflection(self) -> Self::Reflection {
-        unimplemented!()
-    }
-
-    fn from_reflection(_other: Self::Reflection) -> Self {
-        unimplemented!()
+    fn from_reflection(other: Self::Reflection) -> Self {
+        match other {
+            Self::Reflection::transfer(a, b) => Self::Transfer(a, b),
+            Self::Reflection::set_balance(a, b, c) => Self::SetBalance(a, b, c),
+            Self::Reflection::force_transfer(a, b, c) => Self::ForceTransfer(a, b, c),
+            Self::Reflection::transfer_keep_alive(a, b) => Self::TransferKeepAlive(a, b),
+            Self::Reflection::__PhantomItem(_, a) => swallow(a),
+        }
     }
 }
 
@@ -272,231 +174,127 @@ impl Mirror for AccountId {
 pub enum SudoCall {
     Sudo(Box<Call>),
     SudoUncheckedWeight(Box<Call>, u64),
-    SetKey(AccountId),
-    SudoAs(AccountId, Box<Call>),
+    SetKey(sp_core::crypto::AccountId32),
+    SudoAs(sp_core::crypto::AccountId32, Box<Call>),
 }
 
 impl Mirror for SudoCall {
     type Reflection = pallet_sudo::Call<Runtime>;
 
     fn into_reflection(self) -> Self::Reflection {
-        unimplemented!()
+        match self {
+            Self::Sudo(a) => Self::Reflection::sudo(Box::new(a.into_reflection())),
+            Self::SudoUncheckedWeight(a, b) => {
+                Self::Reflection::sudo_unchecked_weight(Box::new(a.into_reflection()), b)
+            }
+            Self::SetKey(a) => Self::Reflection::set_key(a),
+            Self::SudoAs(a, b) => Self::Reflection::sudo_as(a, Box::new(b.into_reflection())),
+        }
     }
 
-    fn from_reflection(_other: Self::Reflection) -> Self {
-        unimplemented!()
+    fn from_reflection(other: Self::Reflection) -> Self {
+        match other {
+            Self::Reflection::sudo(a) => Self::Sudo(Box::new(Mirror::from_reflection(*a))),
+            Self::Reflection::sudo_unchecked_weight(a, b) => {
+                Self::SudoUncheckedWeight(Box::new(Mirror::from_reflection(*a)), b)
+            }
+            Self::Reflection::set_key(a) => Self::SetKey(a),
+            Self::Reflection::sudo_as(a, b) => {
+                Self::SudoAs(a, Box::new(Mirror::from_reflection(*b)))
+            }
+            Self::Reflection::__PhantomItem(_, a) => swallow(a),
+        }
     }
 }
 
 #[derive(Serialize, Deserialize)]
 pub enum DidCall {
-    New(runtime::did::Did, KeyDetail),
-    UpdateKey(KeyUpdate, DidSignature),
-    Remove(DidRemoval, DidSignature),
+    New(runtime::did::Did, runtime::did::KeyDetail),
+    UpdateKey(runtime::did::KeyUpdate, runtime::did::DidSignature),
+    Remove(runtime::did::DidRemoval, runtime::did::DidSignature),
 }
 
 impl Mirror for DidCall {
     type Reflection = runtime::did::Call<Runtime>;
 
     fn into_reflection(self) -> Self::Reflection {
-        unimplemented!()
+        match self {
+            Self::New(a, b) => Self::Reflection::new(a, b),
+            Self::UpdateKey(a, b) => Self::Reflection::update_key(a, b),
+            Self::Remove(a, b) => Self::Reflection::remove(a, b),
+        }
     }
 
-    fn from_reflection(_other: Self::Reflection) -> Self {
-        unimplemented!()
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct KeyDetail {}
-
-impl Mirror for KeyDetail {
-    type Reflection = runtime::did::KeyDetail;
-
-    fn into_reflection(self) -> Self::Reflection {
-        unimplemented!()
-    }
-
-    fn from_reflection(_other: Self::Reflection) -> Self {
-        unimplemented!()
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct KeyUpdate {}
-
-impl Mirror for KeyUpdate {
-    type Reflection = runtime::did::KeyUpdate;
-
-    fn into_reflection(self) -> Self::Reflection {
-        unimplemented!()
-    }
-
-    fn from_reflection(_other: Self::Reflection) -> Self {
-        unimplemented!()
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct DidRemoval {}
-
-impl Mirror for DidRemoval {
-    type Reflection = runtime::did::DidRemoval;
-
-    fn into_reflection(self) -> Self::Reflection {
-        unimplemented!()
-    }
-
-    fn from_reflection(_other: Self::Reflection) -> Self {
-        unimplemented!()
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct DidSignature {}
-
-impl Mirror for DidSignature {
-    type Reflection = runtime::did::DidSignature;
-
-    fn into_reflection(self) -> Self::Reflection {
-        unimplemented!()
-    }
-
-    fn from_reflection(_other: Self::Reflection) -> Self {
-        unimplemented!()
+    fn from_reflection(other: Self::Reflection) -> Self {
+        match other {
+            Self::Reflection::new(a, b) => Self::New(a, b),
+            Self::Reflection::update_key(a, b) => Self::UpdateKey(a, b),
+            Self::Reflection::remove(a, b) => Self::Remove(a, b),
+            Self::Reflection::__PhantomItem(_, a) => swallow(a),
+        }
     }
 }
 
 #[derive(Serialize, Deserialize)]
 pub enum RevokeCall {
-    NewRegistry(runtime::revoke::RevokeId, RevocationRegistry),
-    Revoke(Revoke, PAuth),
-    Unrevoke(UnRevoke, PAuth),
-    RemoveRegistry(RemoveRegistry, PAuth),
+    NewRegistry(runtime::revoke::RevokeId, runtime::revoke::Registry),
+    Revoke(runtime::revoke::Revoke, runtime::revoke::PAuth),
+    Unrevoke(runtime::revoke::UnRevoke, runtime::revoke::PAuth),
+    RemoveRegistry(runtime::revoke::RemoveRegistry, runtime::revoke::PAuth),
 }
 
 impl Mirror for RevokeCall {
     type Reflection = runtime::revoke::Call<Runtime>;
 
     fn into_reflection(self) -> Self::Reflection {
-        unimplemented!()
+        match self {
+            Self::NewRegistry(a, b) => Self::Reflection::new_registry(a, b),
+            Self::Revoke(a, b) => Self::Reflection::revoke(a, b),
+            Self::Unrevoke(a, b) => Self::Reflection::unrevoke(a, b),
+            Self::RemoveRegistry(a, b) => Self::Reflection::remove_registry(a, b),
+        }
     }
 
-    fn from_reflection(_other: Self::Reflection) -> Self {
-        unimplemented!()
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct Revoke {}
-
-impl Mirror for Revoke {
-    type Reflection = runtime::revoke::Revoke;
-
-    fn into_reflection(self) -> Self::Reflection {
-        unimplemented!()
-    }
-
-    fn from_reflection(_other: Self::Reflection) -> Self {
-        unimplemented!()
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct RevocationRegistry {}
-
-impl Mirror for RevocationRegistry {
-    type Reflection = runtime::revoke::Registry;
-
-    fn into_reflection(self) -> Self::Reflection {
-        unimplemented!()
-    }
-
-    fn from_reflection(_other: Self::Reflection) -> Self {
-        unimplemented!()
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct PAuth {}
-
-impl Mirror for PAuth {
-    type Reflection = runtime::revoke::PAuth;
-
-    fn into_reflection(self) -> Self::Reflection {
-        unimplemented!()
-    }
-
-    fn from_reflection(_other: Self::Reflection) -> Self {
-        unimplemented!()
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct UnRevoke {}
-
-impl Mirror for UnRevoke {
-    type Reflection = runtime::revoke::UnRevoke;
-
-    fn into_reflection(self) -> Self::Reflection {
-        unimplemented!()
-    }
-
-    fn from_reflection(_other: Self::Reflection) -> Self {
-        unimplemented!()
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct RemoveRegistry {}
-
-impl Mirror for RemoveRegistry {
-    type Reflection = runtime::revoke::RemoveRegistry;
-
-    fn into_reflection(self) -> Self::Reflection {
-        unimplemented!()
-    }
-
-    fn from_reflection(_other: Self::Reflection) -> Self {
-        unimplemented!()
+    fn from_reflection(other: Self::Reflection) -> Self {
+        match other {
+            Self::Reflection::new_registry(a, b) => Self::NewRegistry(a, b),
+            Self::Reflection::revoke(a, b) => Self::Revoke(a, b),
+            Self::Reflection::unrevoke(a, b) => Self::Unrevoke(a, b),
+            Self::Reflection::remove_registry(a, b) => Self::RemoveRegistry(a, b),
+            Self::Reflection::__PhantomItem(_, a) => swallow(a),
+        }
     }
 }
 
 #[derive(Serialize, Deserialize)]
 pub enum BlobCall {
-    New(Blob, DidSignature),
+    New(runtime::blob::Blob, runtime::did::DidSignature),
 }
 
 impl Mirror for BlobCall {
     type Reflection = runtime::blob::Call<Runtime>;
 
     fn into_reflection(self) -> Self::Reflection {
-        unimplemented!()
+        match self {
+            Self::New(a, b) => Self::Reflection::new(a, b),
+        }
     }
 
-    fn from_reflection(_other: Self::Reflection) -> Self {
-        unimplemented!()
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct Blob {}
-
-impl Mirror for Blob {
-    type Reflection = runtime::blob::Blob;
-
-    fn into_reflection(self) -> Self::Reflection {
-        unimplemented!()
-    }
-
-    fn from_reflection(_other: Self::Reflection) -> Self {
-        unimplemented!()
+    fn from_reflection(other: Self::Reflection) -> Self {
+        match other {
+            Self::Reflection::new(a, b) => Self::New(a, b),
+            Self::Reflection::__PhantomItem(_, a) => swallow(a),
+        }
     }
 }
 
 #[derive(Serialize, Deserialize)]
 pub enum CollectiveCall {
-    SetMembers(Vec<AccountId>, Option<AccountId>, u32),
+    SetMembers(
+        Vec<sp_core::crypto::AccountId32>,
+        Option<sp_core::crypto::AccountId32>,
+        u32,
+    ),
     Execute(Box<Call>, u32),
     Propose(u32, Box<Call>, u32),
     Vote(RuntimeHash, u32, bool),
@@ -507,22 +305,40 @@ impl Mirror for CollectiveCall {
     type Reflection = pallet_collective::Call<Runtime>;
 
     fn into_reflection(self) -> Self::Reflection {
-        unimplemented!()
+        match self {
+            Self::SetMembers(a, b, c) => Self::Reflection::set_members(a, b, c),
+            Self::Execute(a, b) => Self::Reflection::execute(Box::new(a.into_reflection()), b),
+            Self::Propose(a, b, c) => {
+                Self::Reflection::propose(a, Box::new(b.into_reflection()), c)
+            }
+            Self::Vote(a, b, c) => Self::Reflection::vote(a, b, c),
+            Self::Close(a, b, c, d) => Self::Reflection::close(a, b, c, d),
+        }
     }
 
-    fn from_reflection(_other: Self::Reflection) -> Self {
-        unimplemented!()
+    fn from_reflection(other: Self::Reflection) -> Self {
+        match other {
+            Self::Reflection::set_members(a, b, c) => Self::SetMembers(a, b, c),
+            Self::Reflection::execute(a, b) => {
+                Self::Execute(Box::new(Mirror::from_reflection(*a)), b)
+            }
+            Self::Reflection::propose(a, b, c) => {
+                Self::Propose(a, Box::new(Mirror::from_reflection(*b)), c)
+            }
+            Self::Reflection::vote(a, b, c) => Self::Vote(a, b, c),
+            Self::Reflection::close(a, b, c, d) => Self::Close(a, b, c, d),
+            Self::Reflection::__PhantomItem(_, a) => swallow(a),
+        }
     }
 }
 
-#[cfg(test)]
-mod test {
-    use super::*;
+/// Never is unconstructable so this function in uncallable.
+/// safely calling this fuction proves you are in an unreachable codepath.
+fn swallow(_: frame_support::Never) -> ! {
+    unreachable!()
+}
 
-    // #[test]
-    // fn to_from_call() {
-    //     let call: runtime::Call = runtime::Call::System(frame_system::Call::set_code(vec![]));
-    //     let call: Call = Call::from_reflection(call);
-    //     let call: runtime::Call = call.into_reflection();
-    // }
+/// The same that is true for Never is also true for Void
+fn swallowv(_: frame_support::Void) -> ! {
+    unreachable!()
 }
