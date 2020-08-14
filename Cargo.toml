@@ -4,72 +4,92 @@ version = "0.1.0"
 authors = ["Andrew Dirksen <andrew@dirksen.com>"]
 edition = "2018"
 
+[dependencies]
+futures = { version = "0.3.0", features = ["compat"] }
+tokio = "0.1"
+jsonrpc-client-transports = "14.0.3"
+
+# using commit e4c5e318cd78d58a4af8de8907e4d90705138b66 with a couple minor mods
 [dependencies.dock-testnet-runtime]
 path = "../dock-substrate/runtime"
 
-[dependencies.finality-grandpa]
-version = "0.12.3"
+[dependencies.token_migration]
+path = "../dock-substrate/pallets/token_migration"
+
+# [dependencies.finality-grandpa]
+# version = "0.12.3"
 
 [dependencies.frame-support]
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc2'
-version = '2.0.0-rc2'
+tag = 'v2.0.0-rc5'
+version = '2.0.0-rc5'
 
 [dependencies.frame-system]
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc2'
-version = '2.0.0-rc2'
+tag = 'v2.0.0-rc5'
+version = '2.0.0-rc5'
 
 [dependencies.pallet-balances]
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc2'
-version = '2.0.0-rc2'
+tag = 'v2.0.0-rc5'
+version = '2.0.0-rc5'
 
 [dependencies.pallet-collective]
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc2'
-version = '2.0.0-rc2'
+tag = 'v2.0.0-rc5'
+version = '2.0.0-rc5'
 
 [dependencies.pallet-randomness-collective-flip]
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc2'
-version = '2.0.0-rc2'
+tag = 'v2.0.0-rc5'
+version = '2.0.0-rc5'
 
 [dependencies.pallet-timestamp]
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc2'
-version = '2.0.0-rc2'
+tag = 'v2.0.0-rc5'
+version = '2.0.0-rc5'
 
 [dependencies.pallet-grandpa]
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc2'
-version = '2.0.0-rc2'
+tag = 'v2.0.0-rc5'
+version = '2.0.0-rc5'
 
 [dependencies.pallet-sudo]
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc2'
-version = '2.0.0-rc2'
+tag = 'v2.0.0-rc5'
+version = '2.0.0-rc5'
 
 [dependencies.sp-core]
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc2'
-version = '2.0.0-rc2'
+tag = 'v2.0.0-rc5'
+version = '2.0.0-rc5'
 
-[dependencies.sp-finality-grandpa]
+[dependencies.sc-rpc]
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc2'
-# version = 'v2.0.0-rc2'
+tag = 'v2.0.0-rc5'
+version = '2.0.0-rc5'
+
+# [dependencies.sp-finality-grandpa]
+# git = 'https://github.com/paritytech/substrate.git'
+# tag = 'v2.0.0-rc5'
+# version = 'v2.0.0-rc5'
 
 [dependencies.sp-runtime]
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc2'
-version = '2.0.0-rc2'
+tag = 'v2.0.0-rc5'
+version = '2.0.0-rc5'
 
 [dependencies.serde]
 version = "1"
 
 [dependencies.serde_json]
 version = "1"
+
+[dependencies.pallet-transaction-payment]
+git = 'https://github.com/paritytech/substrate.git'
+default-features = false
+tag = 'v2.0.0-rc5'
+version = '2.0.0-rc5'
 
 [dependencies.parity-scale-codec]
 features = ['derive']
